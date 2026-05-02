@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "aw-watcher-screenshot"
+version = "0.1.0"
+description = "Screenshot watcher for ActivityWatch – periodically captures screenshots and generates timelapse videos"
+authors = ["ActivityWatch Contributors"]
+license = "MPL-2.0"
+readme = "README.md"
+
+[tool.poetry.scripts]
+aw-watcher-screenshot   = "aw_watcher_screenshot:main"
+aw-screenshot-timelapse = "aw_watcher_screenshot.timelapse:main"
+
+[tool.poetry.dependencies]
+python   = "^3.8"
+aw-client = "^0.5.14"
+mss      = ">=6.0"
+Pillow   = ">=9.0"
+imageio  = { version = ">=2.9", optional = true }
+
+[tool.poetry.extras]
+# Install imageio to enable GIF timelapse generation without ffmpeg
+timelapse = ["imageio"]
+
+[tool.poetry.dev-dependencies]
+mypy   = "*"
+pytest = "*"
+
+[build-system]
+requires      = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
