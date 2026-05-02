@@ -1,0 +1,117 @@
+name: Windows Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows installer
+    runs-on: windows-latest
+    env:
+      AW_EXTRAS: true
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@master
+        id: toolchain
+        with:
+          toolchain: stable
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: aw-server-rust/aw-webui/node_modules
+          key: windows-node_modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            windows-node_modules-
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        env:
+          cache-name: cargo-build-target
+        with:
+          path: aw-server-rust/target
+          key: windows-${{ env.cache-name }}-${{ steps.toolchain.outputs.cachekey }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            windows-${{ env.cache-name }}-${{ steps.toolchain.outputs.cachekey }}-
+
+      - name: Install dependencies
+        run: |
+          choco install innosetup -y
+          pip3 install poetry==1.4.2
+
+      - name: Determine version
+        run: |
+          VERSION_WITH_V=$(bash scripts/package/getversion.sh)
+          echo "VERSION_WITH_V=${VERSION_WITH_V}" >> $GITHUB_ENV
+
+      - name: Build
+        run: |
+          python3 -m venv venv
+          source venv/Scripts/activate
+          poetry install
+          make build
+
+      - name: Run tests
+        run: |
+          source venv/Scripts/activate
+          make test
+
+      - name: Package
+        run: |
+          source venv/Scripts/activate
+          poetry install  # run again to ensure we have the correct version of PyInstaller
+          make package
+
+      - name: Upload setup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-setup
+          path: dist/activitywatch-*-setup.exe
+
+  release:
+    name: Publish GitHub Release
+    needs: build-windows
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-setup
+          path: dist
+
+      - name: List downloaded files
+        run: ls -R dist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: dist/activitywatch-*-setup.exe
+          prerelease: ${{ contains(github.ref_name, 'b') || contains(github.ref_name, 'rc') }}
