@@ -114,7 +114,7 @@ def _build_with_imageio(
     duration_ms = int(1000 / fps)
     imageio.mimwrite(
         str(output),
-        [f for f in frames],
+        frames,
         format="GIF",
         loop=0,
         duration=duration_ms,

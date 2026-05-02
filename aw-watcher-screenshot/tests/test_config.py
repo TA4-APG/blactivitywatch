@@ -2,6 +2,8 @@
 import sys
 from unittest.mock import patch
 
+import pytest
+
 
 class TestLoadConfig:
     def test_default_poll_time(self):
@@ -51,17 +53,17 @@ class TestLoadConfig:
 class TestParseArgs:
     def test_help_does_not_crash(self):
         """Verify --help exits cleanly (not a crash)."""
-        import argparse
+        from aw_watcher_screenshot.config import parse_args
 
         with patch("sys.argv", ["aw-watcher-screenshot", "--help"]):
             with pytest.raises(SystemExit) as exc_info:
-                from aw_watcher_screenshot.config import parse_args
                 parse_args()
         assert exc_info.value.code == 0
 
     def test_defaults_applied(self):
+        from aw_watcher_screenshot.config import parse_args
+
         with patch("sys.argv", ["aw-watcher-screenshot"]):
-            from aw_watcher_screenshot.config import parse_args
             args = parse_args()
 
         assert args.poll_time == 60
@@ -69,11 +71,9 @@ class TestParseArgs:
         assert args.resolution_scale == 1.0
 
     def test_custom_poll_time(self):
+        from aw_watcher_screenshot.config import parse_args
+
         with patch("sys.argv", ["aw-watcher-screenshot", "--poll-time", "30"]):
-            from aw_watcher_screenshot.config import parse_args
             args = parse_args()
 
         assert args.poll_time == 30.0
-
-
-import pytest
