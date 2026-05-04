@@ -1,0 +1,44 @@
+services:
+  central-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: aw-central-server:local
+    ports:
+      - "${AW_PORT:-5600}:5600"
+    environment:
+      # ── 12-factor: all config via env vars ──────────────────────
+      AW_HOST: "0.0.0.0"
+      AW_PORT: "5600"
+      # Switch to postgresql://user:pass@db:5432/aw for production
+      DATABASE_URL: "${DATABASE_URL:-sqlite:////data/aw-central.db}"
+      AW_API_KEY: "${AW_API_KEY:-}"
+      AW_SERVER_NAME: "${AW_SERVER_NAME:-aw-central-server}"
+      LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+    volumes:
+      - aw_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5600/api/0/info')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ── Optional PostgreSQL backing service ──────────────────────────
+  # Uncomment and set DATABASE_URL=postgresql://aw:aw@db:5432/aw
+  # to use PostgreSQL instead of SQLite.
+  #
+  # db:
+  #   image: postgres:16-alpine
+  #   environment:
+  #     POSTGRES_USER: aw
+  #     POSTGRES_PASSWORD: aw
+  #     POSTGRES_DB: aw
+  #   volumes:
+  #     - pg_data:/var/lib/postgresql/data
+  #   restart: unless-stopped
+
+volumes:
+  aw_data:
+  # pg_data:

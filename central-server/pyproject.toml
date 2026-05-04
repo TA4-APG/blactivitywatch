@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "aw-central-server"
+version = "0.1.0"
+description = "Centralised ActivityWatch server – 12-factor, Docker-ready"
+authors = ["ActivityWatch Contributors"]
+license = "MPL-2.0"
+readme = "README.md"
+packages = [{include = "central_server"}]
+
+[tool.poetry.scripts]
+aw-central-server = "central_server.main:main"
+
+[tool.poetry.dependencies]
+python       = "^3.10"
+fastapi      = "^0.115"
+uvicorn      = {version = "^0.32", extras = ["standard"]}
+sqlalchemy   = "^2.0"
+pydantic     = "^2.0"
+# Optional PostgreSQL driver – install when DATABASE_URL starts with postgresql://
+# psycopg2-binary = {version = "^2.9", optional = true}
+
+[tool.poetry.dev-dependencies]
+pytest       = "^8.0"
+httpx        = "^0.28"   # for TestClient
+pytest-asyncio = "^0.24"
+
+[build-system]
+requires      = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
